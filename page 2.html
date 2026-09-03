@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Flash Physique</title>
+	<style>
+		:root { --ink: #24313b; --muted: #6d7a83; --paper: #f3f7f8; --card: #dcecf5; --back: #d9eee6; --accent: #4185a1; --line: #d5e1e4; }
+		* { box-sizing: border-box; }
+		body { margin: 0; min-height: 100vh; color: var(--ink); background: var(--paper); font-family: Georgia, "Times New Roman", serif; }
+		button { font: inherit; }
+		.page-shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 42px 0 64px; }
+		.topbar { margin-bottom: 58px; }
+		.brand { display: flex; align-items: center; gap: 12px; color: var(--ink); font-size: 1.05rem; font-weight: 700; }
+		.brand-mark { display: grid; width: 42px; height: 38px; place-items: center; position: relative; }
+		.brand-mark::before, .brand-mark::after { position: absolute; width: 27px; height: 29px; border: 2px solid var(--ink); border-radius: 5px; content: ""; }
+		.brand-mark::before { background: #f8e6a8; transform: translate(-5px, 4px) rotate(-10deg); }
+		.brand-mark::after { background: #dcecf5; transform: translate(5px, 1px) rotate(8deg); }
+		.brand-mark span { position: relative; z-index: 1; display: grid; width: 27px; height: 29px; place-items: center; color: #fff; background: #e76f51; border: 2px solid var(--ink); border-radius: 5px; font-family: Arial, sans-serif; font-size: 0.9rem; font-weight: 800; }
+		.intro { max-width: 670px; margin-bottom: 30px; }
+		h1 { margin: 0; font-size: clamp(2.8rem, 7vw, 5.4rem); font-weight: 400; line-height: .95; letter-spacing: -.04em; }
+		.intro p { margin: 22px 0 0; color: var(--muted); font-family: Arial, sans-serif; font-size: .98rem; line-height: 1.6; }
+		.page-navigation { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
+		.page-navigation a { padding: 9px 13px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); background: #fff; font-family: Arial, sans-serif; font-size: .78rem; font-weight: 700; text-decoration: none; }
+		.page-navigation a:hover, .page-navigation a[aria-current="page"] { border-color: var(--accent); color: var(--accent); background: #e4f0f4; }
+		.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 15px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-family: Arial, sans-serif; }
+		.toolbar-actions { display: flex; align-items: center; gap: 10px; }
+		.header-action, .add-card { padding: 10px 15px; border: 0; border-radius: 8px; cursor: pointer; font-family: Arial, sans-serif; font-size: .85rem; font-weight: 700; }
+		.header-action { color: #315f70; background: #e4f0f4; }
+		.add-card { color: #fff; background: var(--accent); }
+		.count { color: var(--muted); font-size: .82rem; } .count strong { color: var(--ink); }
+		.cards-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 28px; }
+		.flashcard { min-height: 245px; perspective: 1000px; cursor: pointer; }
+		.card-inner { position: relative; min-height: 245px; transform-style: preserve-3d; transition: transform 500ms cubic-bezier(.2,.7,.2,1); }
+		.flashcard.is-flipped .card-inner { transform: rotateY(180deg); }
+		.card-face { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 25px; border: 1px solid rgba(36,49,59,.06); border-radius: 12px; box-shadow: 0 14px 30px rgba(44,62,70,.08); backface-visibility: hidden; }
+		.delete-card { position: absolute; top: 16px; right: 16px; z-index: 2; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 6px; color: var(--muted); background: rgba(255,255,255,.6); cursor: pointer; font-family: Arial, sans-serif; font-size: 1.05rem; line-height: 30px; }
+		.delete-card:hover { color: #fff; background: #bc4f37; }
+		.card-front { background: var(--card); } .card-back { color: #29433d; background: var(--back); transform: rotateY(180deg); }
+		.card-face h2 { margin: auto 0; font-size: 1.55rem; font-weight: 400; line-height: 1.15; }
+		.card-hint { color: var(--muted); font-family: Arial, sans-serif; font-size: .73rem; }
+		dialog { width: min(460px, calc(100% - 32px)); padding: 28px; color: var(--ink); border: 0; border-radius: 12px; box-shadow: 0 24px 80px rgba(36,49,59,.25); }
+		dialog::backdrop { background: rgba(36,49,59,.35); }
+		dialog h2 { margin: 0 0 22px; font-size: 1.7rem; font-weight: 400; }
+		label { display: block; margin: 14px 0 7px; font-family: Arial, sans-serif; font-size: .78rem; font-weight: 700; }
+		textarea { width: 100%; min-height: 78px; padding: 10px; resize: vertical; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); }
+		.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+		.dialog-actions button { padding: 10px 14px; border: 0; border-radius: 6px; cursor: pointer; font-family: Arial, sans-serif; font-size: .8rem; font-weight: 700; }
+		.cancel { color: var(--muted); background: #eef1ef; } .save { color: #fff; background: var(--accent); }
+		@media (max-width: 760px) { .page-shell { width: min(100% - 28px, 540px); padding-top: 24px; } .cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } .card-face, .card-inner, .flashcard { min-height: 220px; } .card-face { padding: 18px; } .card-face h2 { font-size: 1.25rem; } }
+		@media (max-width: 470px) { .cards-grid { grid-template-columns: 1fr; } }
+		
+	</style>
+</head>
+<body data-theme="light">
+	<main class="page-shell">
+		<header class="topbar"><div class="brand"><span class="brand-mark" aria-label="Logo Flashcards"><span>F</span></span> Révisions</div></header>
+		<section class="intro" aria-labelledby="page-title"><h1 id="page-title">Flash Physique</h1><p>Clique sur une carte pour avoir sa réponse.</p></section>
+		<nav class="page-navigation" aria-label="Navigation entre les matières"><a href="index - Copie.html">Flash SVT</a><a href="page 2.html" aria-current="page">Flash Physique</a><a href="page 3.html">Flash Maths</a></nav>
+		<section class="toolbar"><span class="count"><strong id="cardCount">3 cartes</strong> dans cette série</span><div class="toolbar-actions"><button class="header-action" type="button" id="shuffleButton">Mélanger les cartes</button><button class="add-card" type="button" id="addButton">+ Ajouter une carte</button></div></section>
+		<section class="cards-grid" aria-label="Cartes de physique">
+			<article class="flashcard" tabindex="0"><div class="card-inner"><div class="card-face card-front"><button class="delete-card" type="button" aria-label="Supprimer cette carte">×</button><h2>Question de physique</h2><span class="card-hint">Cliquer pour retourner</span></div><div class="card-face card-back"><button class="delete-card" type="button" aria-label="Supprimer cette carte">×</button><h2>Réponse à ajouter</h2><span class="card-hint">Cliquer pour revenir</span></div></div></article>
+			<article class="flashcard" tabindex="0"><div class="card-inner"><div class="card-face card-front"><button class="delete-card" type="button" aria-label="Supprimer cette carte">×</button><h2>Question de physique</h2><span class="card-hint">Cliquer pour retourner</span></div><div class="card-face card-back"><button class="delete-card" type="button" aria-label="Supprimer cette carte">×</button><h2>Réponse à ajouter</h2><span class="card-hint">Cliquer pour revenir</span></div></div></article>
+			<article class="flashcard" tabindex="0"><div class="card-inner"><div class="card-face card-front"><button class="delete-card" type="button" aria-label="Supprimer cette carte">×</button><h2>Question de physique</h2><span class="card-hint">Cliquer pour retourner</span></div><div class="card-face card-back"><button class="delete-card" type="button" aria-label="Supprimer cette carte">×</button><h2>Réponse à ajouter</h2><span class="card-hint">Cliquer pour revenir</span></div></div></article>
+		</section>
+	</main>
+	<dialog id="cardDialog"><form id="cardForm"><h2>Nouvelle carte</h2><label for="questionInput">Question</label><textarea id="questionInput" required placeholder="Écris la question au recto..."></textarea><label for="answerInput">Réponse</label><textarea id="answerInput" required placeholder="Écris la réponse au verso..."></textarea><div class="dialog-actions"><button class="cancel" type="button" id="cancelButton">Annuler</button><button class="save" type="submit">Ajouter</button></div></form></dialog>
+	<script>
+		const cardsGrid = document.querySelector('.cards-grid');
+		const cardCount = document.querySelector('#cardCount');
+		const dialog = document.querySelector('#cardDialog');
+		const cardForm = document.querySelector('#cardForm');
+		function bindCard(card) { const flip = () => card.classList.toggle('is-flipped'); card.addEventListener('click', flip); card.querySelectorAll('.delete-card').forEach((button) => button.addEventListener('click', (event) => { event.stopPropagation(); if (confirm('Supprimer cette flashcard ?')) { card.remove(); cardCount.textContent = `${cardsGrid.children.length} cartes`; } })); card.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); flip(); } }); }
+		document.querySelectorAll('.flashcard').forEach(bindCard);
+		document.querySelector('#shuffleButton').addEventListener('click', () => [...cardsGrid.children].sort(() => Math.random() - 0.5).forEach((card) => cardsGrid.appendChild(card)));
+		document.querySelector('#addButton').addEventListener('click', () => { cardForm.reset(); dialog.showModal(); document.querySelector('#questionInput').focus(); });
+		document.querySelector('#cancelButton').addEventListener('click', () => dialog.close());
+		cardForm.addEventListener('submit', (event) => { event.preventDefault(); const question = document.querySelector('#questionInput').value; const answer = document.querySelector('#answerInput').value; const card = document.createElement('article'); card.className = 'flashcard'; card.tabIndex = 0; card.innerHTML = '<div class="card-inner"><div class="card-face card-front"><button class="delete-card" type="button" aria-label="Supprimer cette carte">×</button><h2></h2><span class="card-hint">Cliquer pour retourner</span></div><div class="card-face card-back"><button class="delete-card" type="button" aria-label="Supprimer cette carte">×</button><h2></h2><span class="card-hint">Cliquer pour revenir</span></div></div>'; card.querySelector('.card-front h2').textContent = question; card.querySelector('.card-back h2').textContent = answer; cardsGrid.appendChild(card); bindCard(card); cardCount.textContent = `${cardsGrid.children.length} cartes`; dialog.close(); });
+	</script>
+</body>
+</html>
