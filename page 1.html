@@ -498,6 +498,7 @@
 		const sessionOptions = [...document.querySelectorAll('.session-option')];
 		const deleteSessionButtons = [...document.querySelectorAll('.delete-session')];
 		let activeSession = Number(localStorage.getItem('flashcards-active-session')) || 1;
+		const cardsContentVersion = '2026-09-07-3';
 
 		function getStorageKey(sessionNumber) {
 			return `flashcards-svt-session-${sessionNumber}`;
@@ -508,6 +509,13 @@
 			if (legacyCards && !localStorage.getItem(getStorageKey(1))) {
 				localStorage.setItem(getStorageKey(1), legacyCards);
 			}
+		}
+
+		function syncCardsContent() {
+			const savedVersion = localStorage.getItem('flashcards-svt-content-version');
+			if (savedVersion === cardsContentVersion) return;
+			localStorage.removeItem(getStorageKey(1));
+			localStorage.setItem('flashcards-svt-content-version', cardsContentVersion);
 		}
 
 		function updateSessionMenu() {
@@ -550,7 +558,10 @@
 		function loadSavedCards() {
 			try {
 				const savedCards = JSON.parse(localStorage.getItem(getStorageKey(activeSession)));
-				if (!Array.isArray(savedCards)) return;
+				if (!Array.isArray(savedCards)) {
+					updateCardCount();
+					return;
+				}
 				cardsGrid.replaceChildren();
 				savedCards.forEach(({ question, answer }) => {
 					if (typeof question !== 'string' || typeof answer !== 'string') return;
@@ -587,7 +598,9 @@
 
 		document.querySelectorAll('.flashcard').forEach(bindCard);
 		migrateSavedCards();
+		syncCardsContent();
 		loadSavedCards();
+		window.addEventListener('pagehide', saveCards);
 		updateSessionMenu();
 
 		if (sessionButton && sessionPanel) {
